@@ -229,7 +229,7 @@ class StrategieMinMax(Strategie):
 
 class Allumettes(JeuSequentiel):
     """
-    Represente la strategie optimale pour le jeu des allumettes
+    Represente le jeu des allumettes pour $g$ groupe de $m$ allumettes
     """
 
     def __init__(self, g:int,m:int):
@@ -316,6 +316,16 @@ class Allumettes(JeuSequentiel):
         if all(C['plateau'][i][2 - i] == joueur for i in range(3)):
             score += 1
         return score"""
+    
+
+class StrategieAllumettes(Strategie):
+    """
+    Represente la strategie optimale pour le jeu des allumettes 
+    """
+    def __init__(self, jeu:Allumettes):
+        super().__init__(jeu)
+
+
 
 
     
