@@ -1,12 +1,15 @@
 ################ Question 1 ################
 
+import random
+
+
 class JeuSequentiel:
     """
     Represente un jeu sequentiel, a somme
     nulle, a information parfaite
     """
     def __init__(self):
-
+        self.plateau = None
         pass
 
     def joueurCourant(self, C):
@@ -14,21 +17,21 @@ class JeuSequentiel:
         Rend le joueur courant dans la
         configuration C
         """
-        return C['joueur']
+        raise NotImplementedError
 
     def coupsPossibles(self, C):
         """
         Rend la liste des coups possibles dans
         configuration C
         """
-        return C['coups_possibles']
+        raise NotImplementedError
 
     def f1(self, C):
         """
         Rend la valeur de l'evaluation de la
         configuration C pour le joueur 1
         """
-        return C['evaluation_joueur1']
+        raise NotImplementedError
 
     def joueLeCoup(self, C, coup):
         """
@@ -36,21 +39,14 @@ class JeuSequentiel:
         que le joueur courant ait joue le coup
         dans la configuration C
         """
-        nouvelle_configuration = C.copy()
-        # Mise à jour du joueur courant
-        nouvelle_configuration['joueur'] = 1 if C['joueur'] == 2 else 2
-        nouvelle_configuration['prochainJoueur'] = 1 if nouvelle_configuration['joueur'] == 2 else 2
-        nouvelle_configuration['historique_coups'].append(coup)
-
-        return nouvelle_configuration
+        raise NotImplementedError
 
     def estFini(self, C):
         """
         Rend True si la configuration C est
         une configuration finale
         """
-        # Exemple de logique pour déterminer si la configuration est finale (à remplacer par votre propre logique)
-        return C['est_fini']
+        raise NotImplementedError
 
 
 ################ Question 2 ################
@@ -59,6 +55,7 @@ class Morpion(JeuSequentiel):
     """
     Represente le jeu du morpion (3x3)
     """
+
 
     def __init__(self):
         super().__init__()
@@ -75,7 +72,7 @@ class Morpion(JeuSequentiel):
         """
         Rend la liste des coups possibles dans la configuration C
         """
-        coups = []
+        coups = C['coups_possibles']
         for i in range(3):
             for j in range(3):
                 if self.plateau[i][j] == ' ':
@@ -148,29 +145,53 @@ class Morpion(JeuSequentiel):
         return score
 
 
-if __name__ == "__main__":
-    # Création d'une instance de jeu de Morpion
-    morpion = Morpion()
-    # Configuration initiale
-    config_initiale = {
-        'plateau': [[' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']],
-        'prochain_joueur': 'J1',
-        'est_fini': False
-    }
-    print("Configuration initiale du Morpion:", config_initiale)
+################ Exercice 2 ################
 
-    print("C'est au tour de", morpion.joueurCourant(config_initiale));
+class Strategie:
+    """
+    Represente une strategie de jeu
+    """
+    def __init__(self, jeu:JeuSequentiel):
+        self.jeu = jeu
+        pass
 
-    # Exemple d'appel des méthodes pour jouer un coup
-    coup_joue = (0, 0)
-    nouvelle_config = morpion.joueLeCoup(config_initiale, coup_joue)
+    def choisirProchainCoup(self, C):
+        """
+        Choisit un coup parmi les coups possibles dans la configuration C
+        """
+        raise NotImplementedError
+    
 
-    print("Nouvelle configuration après avoir joué le coup", coup_joue, ":", nouvelle_config)
-    print("Est-ce que la nouvelle configuration est finale ?", morpion.estFini(nouvelle_config))
+class StrategieAleatoire(Strategie):
+    """
+    Represente une strategie de jeu aleatoire pour tout jeu sequentiel
+    """
+
+    def __init__(self, jeu:JeuSequentiel):
+        super().__init__(jeu)
+
+    def choisirProchainCoup(self, C):
+        """
+        Choisit un coup aleatoire suivant une distribution uniforme sur tous les coups
+        possibles dans la configuration C        
+        """
+        coups_possibles = self.Jeu.coupsPossibles(C)
+        return coups_possibles[random.randint(0, len(coups_possibles) - 1)]
+    
 
 
-    coup_joue = (1, 1)
-    nouvelle_config1 = morpion.joueLeCoup(nouvelle_config, coup_joue)
+def morpionAleatoire():
+    """
+    Joue une partie de Morpion avec une strategie aleatoire pour chaque joueur
+    """
+    jeu = Morpion()
+    strategie_j1 = StrategieAleatoire(jeu)
+    strategie_j2 = StrategieAleatoire(jeu)
+    C = {'plateau': jeu.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
+    while not jeu.estFini(C):
+        coup = strategie_j1.choisirProchainCoup(C) if jeu.joueurCourant(C) == 'J1' else strategie_j2.choisirProchainCoup(C)
+        C = jeu.joueLeCoup(C, coup)
 
-    print("Nouvelle configuration après avoir joué le coup", coup_joue, ":", nouvelle_config1)
-    print("Est-ce que la nouvelle configuration est finale ?", morpion.estFini(nouvelle_config1))
+    return jeu.f1(C)
+
+print(morpionAleatoire())
