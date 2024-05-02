@@ -72,10 +72,10 @@ class Morpion(JeuSequentiel):
         """
         Rend la liste des coups possibles dans la configuration C
         """
-        coups = C['coups_possibles']
+        coups = []
         for i in range(3):
             for j in range(3):
-                if self.plateau[i][j] == ' ':
+                if C['plateau'][i][j] == ' ':
                     coups.append((i, j))
         return coups
 
@@ -175,7 +175,7 @@ class StrategieAleatoire(Strategie):
         Choisit un coup aleatoire suivant une distribution uniforme sur tous les coups
         possibles dans la configuration C        
         """
-        coups_possibles = self.Jeu.coupsPossibles(C)
+        coups_possibles = self.jeu.coupsPossibles(C)
         return coups_possibles[random.randint(0, len(coups_possibles) - 1)]
     
 
@@ -191,7 +191,8 @@ def morpionAleatoire():
     while not jeu.estFini(C):
         coup = strategie_j1.choisirProchainCoup(C) if jeu.joueurCourant(C) == 'J1' else strategie_j2.choisirProchainCoup(C)
         C = jeu.joueLeCoup(C, coup)
+        print('\n', C['plateau'][0],'\n', C['plateau'][1],'\n', C['plateau'][2])
 
     return jeu.f1(C)
 
-print(morpionAleatoire())
+
