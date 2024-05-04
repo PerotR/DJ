@@ -260,12 +260,11 @@ class Allumettes(JeuSequentiel):
     def plateauttt(self,coup):
         print(self.plateau[coup[0]])
 
-    """def f1(self, C):
+    def f1(self, C):
         
         #Rend la valeur de l'evaluation de la configuration C pour le joueur 1
 
-        # Pour le Morpion, une évaluation simple peut être le nombre de lignes, colonnes ou diagonales complétées pour J1
-        return self._evaluer(C, 'J1')"""
+        return self._evaluer(C)
 
 
 
@@ -297,25 +296,16 @@ class Allumettes(JeuSequentiel):
             return True
         return False
 
-    """def _evaluer(self, C, joueur):
-        
-        Évalue la configuration C pour le joueur donné
+    def _evaluer(self, C):
         
         score = 0
-        # Compter les lignes complétées pour le joueur donné
-        for i in range(3):
-            if all(cell == joueur for cell in C['plateau'][i]):
-                score += 1
-        # Compter les colonnes complétées pour le joueur donné
-        for j in range(3):
-            if all(C['plateau'][i][j] == joueur for i in range(3)):
-                score += 1
-        # Compter les diagonales complétées pour le joueur donné
-        if all(C['plateau'][i][i] == joueur for i in range(3)):
-            score += 1
-        if all(C['plateau'][i][2 - i] == joueur for i in range(3)):
-            score += 1
-        return score"""
+
+        som=0
+        for i in (C['plateau']):
+            som+=C['plateau'][i]
+        if som%2==1:
+            score =1
+        return score
     
 
 class StrategieAllumettes(Strategie):
@@ -324,6 +314,156 @@ class StrategieAllumettes(Strategie):
     """
     def __init__(self, jeu:Allumettes):
         super().__init__(jeu)
+
+    def grundy(self,n):
+        return [i for i in range(n+1)]
+    def dec_to_bin(self,num):
+        if num == 0:
+            return '0'
+        res = ''
+        quot = num
+
+        while quot > 0:
+            res = str(quot % 2) + res
+            quot = quot // 2
+        return res
+    def bin_to_dec(self,num):
+        res = 0
+        power = len(num) - 1
+
+        for i in num:
+            if i == '1':
+                res += 2 ** power
+            power -= 1
+        return res
+
+    def Som_Nim(self,num1,num2):
+
+        a=self.dec_to_bin(num1)
+        b=self.dec_to_bin(num2)
+
+        i=min(len(a),len(b))
+        j=max(len(a),len(b))
+        r=j-i
+        res=''
+
+        if len(a)>len(b):
+            while r>0:
+                b='0'+b
+                r-=1
+        else:
+            while r>0:
+                a='0'+a
+                r-=1
+
+        for k in range(j):
+            if ((a[k]=='1' and b[k]=='1') or (a[k]=='0' and b[k]=='0')):
+                res+='0'
+
+            elif ((a[k]=='1' and b[k]=='0') or (a[k]=='0' and b[k]=='1')) :
+                res+='1'
+
+        res=self.bin_to_dec(res)
+        
+        return res
+    
+
+    def gagnante(self,C):
+
+        max=0
+
+        for i in (C['plateau']):
+            if C['plateau'][i]>max:
+                max=C['plateau'][i]
+
+        g=self.grundy(max)
+
+        res=0
+
+        for i in C['plateau']:
+            res= self.Som_Nim(res,g[C['plateau'][i]])
+
+
+        if res==0:
+            return (False,0)
+        
+        else:
+
+            return (True,res)
+        
+
+def Allumettes_Jeu_Nim(g,m):
+
+    jeu=Allumettes(g,m)
+    strategie_joueur = StrategieAllumettes(jeu)
+    
+    C = {'plateau': jeu.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
+    while not jeu.estFini(C):
+
+        (b,g)=strategie_joueur.gagnante(C)
+        if b:
+            res=0
+            coupsTrouver=False
+            coupsPossibles= jeu.coupsPossibles(C)
+
+            while res < len(coupsPossibles) and not coupsTrouver:
+
+                C['plateau'][coupsPossibles[res][0]]-=coupsPossibles[res][1]
+                (bi,gi)=strategie_joueur.gagnante(C)
+                C['plateau'][coupsPossibles[res][0]]+=coupsPossibles[res][1]
+
+                if not bi:
+                    coupsTrouver=True
+
+                else:
+                    res+=1
+
+            print(C['prochain_joueur']+' joue le coups : ('+str(coupsPossibles[res][0])+','+str(coupsPossibles[res][1])+')')
+
+            C=jeu.joueLeCoup(C,coupsPossibles[res])
+    
+        else:
+
+            max=0
+
+            coupsPossibles=jeu.coupsPossibles(C)
+            for s,coups in coupsPossibles:
+
+                C['plateau'][s]-=coups
+                (bi,gi)=strategie_joueur.gagnante(C)
+                C['plateau'][s]+=coups
+
+                if gi>max:
+
+                    g_choisi=s
+                    coups_choisi=coups
+                    max=gi
+            print(C['prochain_joueur']+' joue le coups : ('+str(g_choisi)+','+str(coups_choisi)+')')
+            C=jeu.joueLeCoup(C,(g_choisi,coups_choisi))
+
+    print('Le joueur '+C['prochain_joueur']+' a gagné la partie')
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
 
 
 
