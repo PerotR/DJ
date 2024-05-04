@@ -256,9 +256,6 @@ class Allumettes(JeuSequentiel):
             for j in range(C['plateau'][i]):
                 coups.append((i, j+1))
         return coups
-    
-    def plateauttt(self,coup):
-        print(self.plateau[coup[0]])
 
     def f1(self, C):
         
@@ -362,11 +359,8 @@ class StrategieAllumettes(Strategie):
 
             elif ((a[k]=='1' and b[k]=='0') or (a[k]=='0' and b[k]=='1')) :
                 res+='1'
-
         res=self.bin_to_dec(res)
-        
         return res
-    
 
     def gagnante(self,C):
 
@@ -383,33 +377,24 @@ class StrategieAllumettes(Strategie):
         for i in C['plateau']:
             res= self.Som_Nim(res,g[C['plateau'][i]])
 
-
         if res==0:
             return (False,0)
-        
         else:
-
             return (True,res)
         
-
-def Allumettes_Jeu_Nim(g,m):
-
-    jeu=Allumettes(g,m)
-    strategie_joueur = StrategieAllumettes(jeu)
-    
-    C = {'plateau': jeu.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
-    while not jeu.estFini(C):
-
-        (b,g)=strategie_joueur.gagnante(C)
+    def choisirProchainCoup(self, C):
+        (b,g)=self.gagnante(C)
+        coups_choisi=None
+        g_choisi=None
         if b:
             res=0
             coupsTrouver=False
-            coupsPossibles= jeu.coupsPossibles(C)
+            coupsPossibles= self.jeu.coupsPossibles(C)
 
             while res < len(coupsPossibles) and not coupsTrouver:
 
                 C['plateau'][coupsPossibles[res][0]]-=coupsPossibles[res][1]
-                (bi,gi)=strategie_joueur.gagnante(C)
+                (bi,gi)=self.gagnante(C)
                 C['plateau'][coupsPossibles[res][0]]+=coupsPossibles[res][1]
 
                 if not bi:
@@ -417,20 +402,16 @@ def Allumettes_Jeu_Nim(g,m):
 
                 else:
                     res+=1
+            g_choisi=coupsPossibles[res][0]
+            coups_choisi=coupsPossibles[res][1]
 
-            print(C['prochain_joueur']+' joue le coups : ('+str(coupsPossibles[res][0])+','+str(coupsPossibles[res][1])+')')
-
-            C=jeu.joueLeCoup(C,coupsPossibles[res])
-    
         else:
-
             max=0
-
-            coupsPossibles=jeu.coupsPossibles(C)
+            coupsPossibles=self.jeu.coupsPossibles(C)
             for s,coups in coupsPossibles:
 
                 C['plateau'][s]-=coups
-                (bi,gi)=strategie_joueur.gagnante(C)
+                (bi,gi)=self.gagnante(C)
                 C['plateau'][s]+=coups
 
                 if gi>max:
@@ -438,10 +419,24 @@ def Allumettes_Jeu_Nim(g,m):
                     g_choisi=s
                     coups_choisi=coups
                     max=gi
-            print(C['prochain_joueur']+' joue le coups : ('+str(g_choisi)+','+str(coups_choisi)+')')
-            C=jeu.joueLeCoup(C,(g_choisi,coups_choisi))
+        return (g_choisi,coups_choisi)
 
-    print('Le joueur '+C['prochain_joueur']+' a gagné la partie')
+
+def Allumettes_Jeu_Nim(g,m):
+
+    jeu=Allumettes(g,m)
+    strategie_j1 = StrategieAllumettes(jeu)
+    strategie_j2 = StrategieAllumettes(jeu)
+    C = {'plateau': jeu.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
+    while not jeu.estFini(C):
+        coup = strategie_j1.choisirProchainCoup(C) if jeu.joueurCourant(C) == 'J1' else strategie_j2.choisirProchainCoup(C)
+        C = jeu.joueLeCoup(C, coup)
+        print(C['plateau'])
+    return C['prochain_joueur']
+
+        
+
+
 
 
 
