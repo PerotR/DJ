@@ -2,6 +2,8 @@
 
 import copy
 import random
+import time
+import numpy as np
 
 
 class JeuSequentiel:
@@ -103,7 +105,9 @@ class Morpion(JeuSequentiel):
 
         # Vérification si la partie est terminée après le coup joué
         nouvelle_configuration['est_fini'] = self.estFini(nouvelle_configuration)
-        nouvelle_configuration['prochain_joueur'] = 'J1' if joueur_actuel == 'J2' else 'J2'
+        if not nouvelle_configuration['est_fini']:
+            nouvelle_configuration['prochain_joueur'] = 'J1' if joueur_actuel == 'J2' else 'J2'
+
         return nouvelle_configuration
 
     def estFini(self, C):
@@ -133,34 +137,23 @@ class Morpion(JeuSequentiel):
         """
         Évalue la configuration C pour le joueur donné
         """
-        score = (0,0)
-        
-        # Compter les lignes complétées pour le joueur donné
-        for i in range(3):
-            if all(cell == 'X' for cell in C['plateau'][i]):
-                score = (1,-1)
-        # Compter les colonnes complétées pour le joueur donné
-        for j in range(3):
-            if all(C['plateau'][i][j] == 'X' for i in range(3)):
-                score = (1,-1)
-        # Compter les diagonales complétées pour le joueur donné
-        if all(C['plateau'][i][i] == 'X' for i in range(3)):
-            score = (1,-1)
-        if all(C['plateau'][i][2 - i] == 'X' for i in range(3)):
-            score = (1,-1)
+        score = 0
 
-        for i in range(3):
-            if all(cell == 'O' for cell in C['plateau'][i]):
-                score = (-1,1)
-        # Compter les colonnes complétées pour le joueur donné
-        for j in range(3):
-            if all(C['plateau'][i][j] == 'O' for i in range(3)):
-                score = (-1,1)
-        # Compter les diagonales complétées pour le joueur donné
-        if all(C['plateau'][i][i] == 'O' for i in range(3)):
-            score = (-1,1)
-        if all(C['plateau'][i][2 - i] == 'O' for i in range(3)):
-            score = (-1,1)
+        # Compter les lignes, colonnes et diagonales complétées ou presque complétées pour chaque joueur
+        for joueur in ['X', 'O']:
+            point = 1 if joueur == 'X' else -1
+
+            for i in range(3):
+                if C['plateau'][i].count(joueur) == 2 and C['plateau'][i].count(' ') == 1:
+                    score += point
+                if [C['plateau'][j][i] for j in range(3)].count(joueur) == 2 and [C['plateau'][j][i] for j in range(3)].count(' ') == 1:
+                    score += point
+
+            if [C['plateau'][i][i] for i in range(3)].count(joueur) == 2 and [C['plateau'][i][i] for i in range(3)].count(' ') == 1:
+                score += point
+            if [C['plateau'][i][2 - i] for i in range(3)].count(joueur) == 2 and [C['plateau'][i][2 - i] for i in range(3)].count(' ') == 1:
+                score += point
+
         return score
 
 
@@ -216,7 +209,27 @@ def morpionAleatoire():
         C = jeu.joueLeCoup(C, coup)
         print('\n',C['plateau'][0],'\n', C['plateau'][1],'\n', C['plateau'][2],'\n')
 
-    return jeu.f1(C)
+    return C['prochain_joueur']
+
+
+def morpionMinMax():
+    """
+    Joue une partie de Morpion avec une strategie aleatoire pour chaque joueur
+    """
+    jeu = Morpion()
+    strategie_j1 = StrategieMinMax(jeu,3)
+    strategie_j2 = StrategieMinMax(jeu,3)
+
+    
+    C = {'plateau': jeu.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
+    print("Le joueur J1 joue les X")
+    print("Le joueur J2 joue les O")
+    while not jeu.estFini(C):
+        coup = strategie_j1.choisirProchainCoup(C) if jeu.joueurCourant(C) == 'J1' else strategie_j2.choisirProchainCoup(C)
+        C = jeu.joueLeCoup(C, coup)
+        print('\n',C['plateau'][0],'\n', C['plateau'][1],'\n', C['plateau'][2],'\n')
+
+    return C['prochain_joueur']
 
 
 ################ Exercice 3 ################
@@ -241,12 +254,12 @@ class StrategieMinMax(Strategie):
     def MinMax(self, C, k, coup_joue=None):
 
         if self.jeu.coupsPossibles(C) == []:
-            return self.jeu.f1(C)[0], coup_joue
+            return self.jeu.f1(C), coup_joue
 
         if k==0 or C['est_fini']:
             if coup_joue ==None:
                 coup_joue = self.jeu.coupsPossibles(C)[0]
-            return self.jeu.f1(C)[0], coup_joue
+            return self.jeu.f1(C), coup_joue
         
         if C['prochain_joueur'] == 'J1':
             val = float('-inf')
@@ -276,17 +289,6 @@ class StrategieMinMax(Strategie):
     def toString(self):
         return "MinMax"
     
-    
-
-
-
-
-
-
-
-
-
-
 ################ Exercice 4 ################
 
 
@@ -341,7 +343,9 @@ class Allumettes(JeuSequentiel):
             nouvelle_configuration['plateau'][coup[0]] -= coup[1]
         # Vérification si la partie est terminée après le coup joué
         nouvelle_configuration['est_fini'] = self.estFini(nouvelle_configuration)
-        nouvelle_configuration['prochain_joueur'] = 'J1' if joueur_actuel == 'J2' else 'J2'
+        if not nouvelle_configuration['est_fini']:
+            nouvelle_configuration['prochain_joueur'] = 'J1' if joueur_actuel == 'J2' else 'J2'
+
         return nouvelle_configuration
 
     def estFini(self, C):
@@ -357,20 +361,17 @@ class Allumettes(JeuSequentiel):
         return False
 
     def _evaluer(self, C):
-        
-        score = (0,0)
+        """
+        Évalue la configuration C pour le joueur donné
+        """
+        score = 0
+        somme_allumettes = sum(C['plateau'].values())
 
-        som=0
-        if C['prochain_joueur']=='J1':
-            for i in (C['plateau']):
-                som+=C['plateau'][i]
-            if som%2==1:
-                score =(1,-1)
+        if C['prochain_joueur'] == 'J1':
+            score = 1 if somme_allumettes % 2 == 1 else -1
         else:
-            for i in (C['plateau']):
-                som+=C['plateau'][i]
-            if som%2==1:
-                score =(-1,1)
+            score = -1 if somme_allumettes % 2 == 1 else 1
+
         return score
     
 
@@ -506,50 +507,123 @@ def Allumettes_Jeu_Nim(g,m):
 
 ##############################################################################
 
-# allumettes = Allumettes(3,2)
+morpion = Morpion()
 
-# strategie_j1 = StrategieMinMax(allumettes, 9)
-# strategie_j2 = StrategieMinMax(allumettes, 9)
-
-# C = {'plateau': allumettes.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
-
-# while not allumettes.estFini(C):
-#     coup = strategie_j1.choisirProchainCoup(C) if C['prochain_joueur'] == 'J1' else strategie_j2.choisirProchainCoup(C)
-#     C = allumettes.joueLeCoup(C, coup)
-#     print(C['plateau'])
-#     print(C['prochain_joueur'])
-
-
-# morpion = Morpion()
-
-# strategie_j1 = StrategieMinMax(morpion, 6)
-# strategie_j2 = StrategieAleatoire(morpion)
-
-# C = {'plateau': morpion.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
-
-# while not morpion.estFini(C):
-#     coup = strategie_j1.choisirProchainCoup(C) if morpion.joueurCourant(C) == 'J1' else strategie_j2.choisirProchainCoup(C)
-#     C = morpion.joueLeCoup(C, coup)
-#     print('\n',C['plateau'][0],'\n', C['plateau'][1],'\n', C['plateau'][2],'\n')
-#     res = morpion.f1(C)
-#     print(res)
-
-#     if res == (1, -1):
-#         print("J1 a gagné")
-#     elif res == (-1, 1):
-#         print("J2 a gagné")
-#     elif res == (0, 0):
-#         print("Match Nul")
-#     else:
-#         print("Résultat inattendu:", res)
+strategie_j1 = StrategieAleatoire(morpion)
+strategie_j2 = StrategieMinMax(morpion,6)
 
 
 
+C = {'plateau': morpion.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
+while not morpion.estFini(C):
+    coup = strategie_j1.choisirProchainCoup(C) if morpion.joueurCourant(C) == 'J1' else strategie_j2.choisirProchainCoup(C)
+    C = morpion.joueLeCoup(C, coup)
 
+print(C['prochain_joueur'])
+
+
+
+def tournoiMorpion(k):
+
+    victoire_J1=0
+    victoire_J2=0
+    temps_executions = []
     
+    for _ in range(100):
+        morpion = Morpion()
+        strategie_j1 = StrategieAleatoire(morpion)
+        strategie_j2 = StrategieMinMax(morpion,k)
+        C = {'plateau': morpion.plateau, 'prochain_joueur': 'J2', 'est_fini': False}
+        debut = time.time()
+        while not morpion.estFini(C):
+            coup = strategie_j1.choisirProchainCoup(C) if morpion.joueurCourant(C) == 'J1' else strategie_j2.choisirProchainCoup(C)
+            C = morpion.joueLeCoup(C, coup)
+        if C['prochain_joueur']=='J1':
+            victoire_J1+=1
+        else:
+            victoire_J2+=1
+        fin = time.time()
+        temps_executions.append(fin - debut)
+
+    return [victoire_J1,victoire_J2,np.sum(temps_executions), np.mean(temps_executions)]
+            
+
+def tournoiAllumette_Ale(g,m):
 
 
+    victoire_J1=0
+    victoire_J2=0
+    temps_executions = []
+    for _ in range (100):
+        allumettes= Allumettes(g,m)
+
+        strategie_j1 = StrategieAllumettes(allumettes)
+        strategie_j2 = StrategieAleatoire(allumettes)
+        C = {'plateau': allumettes.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
+        debut = time.time()
+        while not allumettes.estFini(C):
+            coup = strategie_j1.choisirProchainCoup(C) if allumettes.joueurCourant(C) == 'J1' else strategie_j2.choisirProchainCoup(C)
+            C = allumettes.joueLeCoup(C, coup)
+        if C['prochain_joueur']=='J1':
+            victoire_J1+=1
+        else:
+            victoire_J2+=1
+        fin = time.time()
+
+        temps_executions.append(fin - debut)
+
+    return [victoire_J1,victoire_J2,np.sum(temps_executions), np.mean(temps_executions)]
 
 
+def tournoiAllumette_MinMax(g,m,k):
+
+    victoire_J1=0
+    victoire_J2=0
+    temps_executions = []
+    for _ in range (100):
+        allumettes= Allumettes(g,m)
+
+        strategie_j1 = StrategieAllumettes(allumettes)
+        strategie_j2 = StrategieMinMax(allumettes,k)
+        C = {'plateau': allumettes.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
+        debut = time.time()
+        while not allumettes.estFini(C):
+            coup = strategie_j1.choisirProchainCoup(C) if allumettes.joueurCourant(C) == 'J1' else strategie_j2.choisirProchainCoup(C)
+            C = allumettes.joueLeCoup(C, coup)
+        if C['prochain_joueur']=='J1':
+            victoire_J1+=1
+        else:
+            victoire_J2+=1
+        fin = time.time()
+
+        temps_executions.append(fin - debut)
+
+    return [victoire_J1,victoire_J2,np.sum(temps_executions), np.mean(temps_executions)]
+
+def tournoiAllumette(g,m):
+
+    victoire_J1=0
+    victoire_J2=0
+    temps_executions = []
+    for _ in range (100):
+
+        allumettes= Allumettes(g,m)
+
+        strategie_j1 = StrategieAllumettes(allumettes)
+        strategie_j2 = StrategieAllumettes(allumettes)
+        C = {'plateau': allumettes.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
+        debut = time.time()
+        while not allumettes.estFini(C):
+            coup = strategie_j1.choisirProchainCoup(C) if allumettes.joueurCourant(C) == 'J1' else strategie_j2.choisirProchainCoup(C)
+            C = allumettes.joueLeCoup(C, coup)
+        if C['prochain_joueur']=='J1':
+            victoire_J1+=1
+        else:
+            victoire_J2+=1
+        fin = time.time()
+
+        temps_executions.append(fin - debut)
+
+    return [victoire_J1,victoire_J2,np.sum(temps_executions), np.mean(temps_executions)]
 
 
