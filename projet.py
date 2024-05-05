@@ -1,5 +1,6 @@
 ################ Question 1 ################
 
+import copy
 import random
 
 
@@ -83,7 +84,7 @@ class Morpion(JeuSequentiel):
         Rend la valeur de l'evaluation de la configuration C pour le joueur 1
         """
         # Pour le Morpion, une évaluation simple peut être le nombre de lignes, colonnes ou diagonales complétées pour J1
-        return self._evaluer(C, 'J1')
+        return self._evaluer(C)
 
     def joueLeCoup(self, C, coup):
         """
@@ -94,7 +95,12 @@ class Morpion(JeuSequentiel):
         # Obtention du joueur courant
         joueur_actuel = self.joueurCourant(C)
         # Mise à jour du plateau avec le coup joué
-        nouvelle_configuration['plateau'][coup[0]][coup[1]] = joueur_actuel
+        if joueur_actuel=='J1':
+            nouvelle_configuration['plateau'][coup[0]][coup[1]] = 'X'
+
+        else:
+            nouvelle_configuration['plateau'][coup[0]][coup[1]] = 'O'
+
         # Vérification si la partie est terminée après le coup joué
         nouvelle_configuration['est_fini'] = self.estFini(nouvelle_configuration)
         nouvelle_configuration['prochain_joueur'] = 'J1' if joueur_actuel == 'J2' else 'J2'
@@ -123,24 +129,43 @@ class Morpion(JeuSequentiel):
         # Si le plateau est rempli et aucun joueur n'a gagné, la partie est terminée en match nul
         return True
 
-    def _evaluer(self, C, joueur):
+    def _evaluer(self, C):
         """
         Évalue la configuration C pour le joueur donné
         """
-        score = 0
+        score = (0,0)
+        
         # Compter les lignes complétées pour le joueur donné
-        for i in range(3):
-            if all(cell == joueur for cell in C['plateau'][i]):
-                score += 1
-        # Compter les colonnes complétées pour le joueur donné
-        for j in range(3):
-            if all(C['plateau'][i][j] == joueur for i in range(3)):
-                score += 1
-        # Compter les diagonales complétées pour le joueur donné
-        if all(C['plateau'][i][i] == joueur for i in range(3)):
-            score += 1
-        if all(C['plateau'][i][2 - i] == joueur for i in range(3)):
-            score += 1
+        if C['prochain_joueur'] =='J1':
+            for i in range(3):
+                if all(cell == 'X' for cell in C['plateau'][i]):
+                    score = (1,-1)
+            # Compter les colonnes complétées pour le joueur donné
+            for j in range(3):
+                if all(C['plateau'][i][j] == 'X' for i in range(3)):
+                    score = (1,-1)
+            # Compter les diagonales complétées pour le joueur donné
+            if all(C['plateau'][i][i] == 'X' for i in range(3)):
+                score = (1,-1)
+            if all(C['plateau'][i][2 - i] == 'X' for i in range(3)):
+                score = (1,-1)
+
+        else:
+            for i in range(3):
+                if all(cell == 'O' for cell in C['plateau'][i]):
+                    score = (-1,1)
+            # Compter les colonnes complétées pour le joueur donné
+            for j in range(3):
+                if all(C['plateau'][i][j] == 'O' for i in range(3)):
+                    score = (-1,1)
+            # Compter les diagonales complétées pour le joueur donné
+            if all(C['plateau'][i][i] == 'O' for i in range(3)):
+                score = (-1,1)
+            if all(C['plateau'][i][2 - i] == 'O' for i in range(3)):
+                score = (-1,1)
+
+        print(score)
+
         return score
 
 
@@ -186,11 +211,15 @@ def morpionAleatoire():
     jeu = Morpion()
     strategie_j1 = StrategieAleatoire(jeu)
     strategie_j2 = StrategieAleatoire(jeu)
+
+    
     C = {'plateau': jeu.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
+    print("Le joueur J1 joue les X")
+    print("Le joueur J1 joue les O")
     while not jeu.estFini(C):
         coup = strategie_j1.choisirProchainCoup(C) if jeu.joueurCourant(C) == 'J1' else strategie_j2.choisirProchainCoup(C)
         C = jeu.joueLeCoup(C, coup)
-        print('\n', C['plateau'][0],'\n', C['plateau'][1],'\n', C['plateau'][2])
+        print('\n',C['plateau'][0],'\n', C['plateau'][1],'\n', C['plateau'][2],'\n')
 
     return jeu.f1(C)
 
@@ -201,28 +230,67 @@ class StrategieMinMax(Strategie):
     """
     Represente une strategie utilisant un arbre min-max de profondeur k
     """
-
     def __init__(self,jeu:JeuSequentiel, k:int):
-        super().__init__(jeu,k)
+        super().__init__(jeu)
+        self.k = k
 
-    def noeudsEnfant(self,coups,C):
+    def choisirProchainCoup(self, C):
+        """
+        Choisit un coup parmi les coups possibles dans la configuration C
+        """
 
-        coups_restant=[]
+        return self.MinMax(C, self.k)[1]
 
-        for c in self.jeu.coupsPossibles(C):
-            if c != coups:
-                coups_restant.append(c)
 
-        return  coups_restant
     
+    def MinMax(self, C, k, coup_joue=None):
 
-    def MinMax(self,profondeur,coups,C):
+        if self.jeu.coupsPossibles(C) == []:
+            return self.jeu.f1(C)[0], coup_joue
 
-        if profondeur == self.k or len(self.noeudsEnfant(self,coups,C))==0:
-            return None
+        if k==0 or C['est_fini']:
+            if coup_joue ==None:
+                coup_joue = self.jeu.coupsPossibles(C)[0]
+            return self.jeu.f1(C)[0], coup_joue
         
-        return None
+        if C['prochain_joueur'] == 'J1':
+            val = float('-inf')
+            cp = None
+            for coup in self.jeu.coupsPossibles(C):
+                
+                C_copy = copy.deepcopy(C)
+                self.jeu.joueLeCoup(C_copy,coup)
+                next_value, next_coup = self.MinMax(C_copy, k-1, coup)
+                if next_value > val:
+                    val = next_value
+                    cp = next_coup
+            
+            return val, cp
+        else:
+            val = float('inf')
+            cp = None
+            for coup in self.jeu.coupsPossibles(C):
+                C_copy = copy.deepcopy(C)
+                self.jeu.joueLeCoup(C_copy,coup)
+                next_value, next_coup = self.MinMax(C_copy, k-1, coup)
+                if next_value < val:
+                    val = next_value
+                    cp = next_coup
+            return  val, cp
+        
+    def toString(self):
+        return "MinMax"
     
+    
+
+
+
+
+
+
+
+
+
 
 ################ Exercice 4 ################
 
@@ -295,13 +363,19 @@ class Allumettes(JeuSequentiel):
 
     def _evaluer(self, C):
         
-        score = 0
+        score = (0,0)
 
         som=0
-        for i in (C['plateau']):
-            som+=C['plateau'][i]
-        if som%2==1:
-            score =1
+        if C['prochain_joueur']=='J1':
+            for i in (C['plateau']):
+                som+=C['plateau'][i]
+            if som%2==1:
+                score =(1,-1)
+        else:
+            for i in (C['plateau']):
+                som+=C['plateau'][i]
+            if som%2==1:
+                score =(-1,1)
         return score
     
 
@@ -434,31 +508,45 @@ def Allumettes_Jeu_Nim(g,m):
         print(C['plateau'])
     return C['prochain_joueur']
 
-        
+
+##############################################################################
+
+# allumettes = Allumettes(3,2)
+
+# strategie_j1 = StrategieMinMax(allumettes, 9)
+# strategie_j2 = StrategieMinMax(allumettes, 9)
+
+# C = {'plateau': allumettes.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
+
+# while not allumettes.estFini(C):
+#     coup = strategie_j1.choisirProchainCoup(C) if C['prochain_joueur'] == 'J1' else strategie_j2.choisirProchainCoup(C)
+#     C = allumettes.joueLeCoup(C, coup)
+#     print(C['plateau'])
+#     print(C['prochain_joueur'])
 
 
+# morpion = Morpion()
 
+# strategie_j1 = StrategieMinMax(morpion, 6)
+# strategie_j2 = StrategieAleatoire(morpion)
 
+# C = {'plateau': morpion.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
 
+# while not morpion.estFini(C):
+#     coup = strategie_j1.choisirProchainCoup(C) if morpion.joueurCourant(C) == 'J1' else strategie_j2.choisirProchainCoup(C)
+#     C = morpion.joueLeCoup(C, coup)
+#     print('\n',C['plateau'][0],'\n', C['plateau'][1],'\n', C['plateau'][2],'\n')
+#     res = morpion.f1(C)
+#     print(res)
 
-
-
-
-        
-
-
-
-
-
-
-
-
-        
-
-
-
-
-
+#     if res == (1, -1):
+#         print("J1 a gagné")
+#     elif res == (-1, 1):
+#         print("J2 a gagné")
+#     elif res == (0, 0):
+#         print("Match Nul")
+#     else:
+#         print("Résultat inattendu:", res)
 
 
 
