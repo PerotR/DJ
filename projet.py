@@ -61,7 +61,6 @@ class Morpion(JeuSequentiel):
 
     def __init__(self):
         super().__init__()
-        # Initialisation spécifique au Morpion, par exemple, un plateau vide
         self.plateau = [[' ' for _ in range(3)] for _ in range(3)]
 
     def joueurCourant(self, C):
@@ -85,7 +84,6 @@ class Morpion(JeuSequentiel):
         """
         Rend la valeur de l'evaluation de la configuration C pour le joueur 1
         """
-        # Pour le Morpion, une évaluation simple peut être le nombre de lignes, colonnes ou diagonales complétées pour J1
         return self._evaluer(C)
 
     def joueLeCoup(self, C, coup):
@@ -503,23 +501,6 @@ def Allumettes_Jeu_Nim(g,m):
         C = jeu.joueLeCoup(C, coup)
         print(C['plateau'])
     return C['prochain_joueur']
-
-
-##############################################################################
-
-morpion = Morpion()
-
-strategie_j1 = StrategieAleatoire(morpion)
-strategie_j2 = StrategieMinMax(morpion,6)
-
-
-
-C = {'plateau': morpion.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
-while not morpion.estFini(C):
-    coup = strategie_j1.choisirProchainCoup(C) if morpion.joueurCourant(C) == 'J1' else strategie_j2.choisirProchainCoup(C)
-    C = morpion.joueLeCoup(C, coup)
-
-print(C['prochain_joueur'])
 
 
 
