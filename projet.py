@@ -136,36 +136,31 @@ class Morpion(JeuSequentiel):
         score = (0,0)
         
         # Compter les lignes complétées pour le joueur donné
-        if C['prochain_joueur'] =='J1':
-            for i in range(3):
-                if all(cell == 'X' for cell in C['plateau'][i]):
-                    score = (1,-1)
-            # Compter les colonnes complétées pour le joueur donné
-            for j in range(3):
-                if all(C['plateau'][i][j] == 'X' for i in range(3)):
-                    score = (1,-1)
-            # Compter les diagonales complétées pour le joueur donné
-            if all(C['plateau'][i][i] == 'X' for i in range(3)):
+        for i in range(3):
+            if all(cell == 'X' for cell in C['plateau'][i]):
                 score = (1,-1)
-            if all(C['plateau'][i][2 - i] == 'X' for i in range(3)):
+        # Compter les colonnes complétées pour le joueur donné
+        for j in range(3):
+            if all(C['plateau'][i][j] == 'X' for i in range(3)):
                 score = (1,-1)
+        # Compter les diagonales complétées pour le joueur donné
+        if all(C['plateau'][i][i] == 'X' for i in range(3)):
+            score = (1,-1)
+        if all(C['plateau'][i][2 - i] == 'X' for i in range(3)):
+            score = (1,-1)
 
-        else:
-            for i in range(3):
-                if all(cell == 'O' for cell in C['plateau'][i]):
-                    score = (-1,1)
-            # Compter les colonnes complétées pour le joueur donné
-            for j in range(3):
-                if all(C['plateau'][i][j] == 'O' for i in range(3)):
-                    score = (-1,1)
-            # Compter les diagonales complétées pour le joueur donné
-            if all(C['plateau'][i][i] == 'O' for i in range(3)):
+        for i in range(3):
+            if all(cell == 'O' for cell in C['plateau'][i]):
                 score = (-1,1)
-            if all(C['plateau'][i][2 - i] == 'O' for i in range(3)):
+        # Compter les colonnes complétées pour le joueur donné
+        for j in range(3):
+            if all(C['plateau'][i][j] == 'O' for i in range(3)):
                 score = (-1,1)
-
-        print(score)
-
+        # Compter les diagonales complétées pour le joueur donné
+        if all(C['plateau'][i][i] == 'O' for i in range(3)):
+            score = (-1,1)
+        if all(C['plateau'][i][2 - i] == 'O' for i in range(3)):
+            score = (-1,1)
         return score
 
 
@@ -215,7 +210,7 @@ def morpionAleatoire():
     
     C = {'plateau': jeu.plateau, 'prochain_joueur': 'J1', 'est_fini': False}
     print("Le joueur J1 joue les X")
-    print("Le joueur J1 joue les O")
+    print("Le joueur J2 joue les O")
     while not jeu.estFini(C):
         coup = strategie_j1.choisirProchainCoup(C) if jeu.joueurCourant(C) == 'J1' else strategie_j2.choisirProchainCoup(C)
         C = jeu.joueLeCoup(C, coup)
