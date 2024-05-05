@@ -303,7 +303,7 @@ class Allumettes(JeuSequentiel):
         self.g=g
         self.plateau = {}
         for i in range (self.g):
-            self.plateau[i+1]=m
+            self.plateau["G"+str(i+1)]=m
 
     def joueurCourant(self, C):
         """
